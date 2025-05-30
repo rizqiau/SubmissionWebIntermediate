@@ -1,4 +1,3 @@
-// CSS imports
 import "../styles/styles.css";
 
 import App from "./pages/app";
@@ -14,17 +13,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userToken = localStorage.getItem("userToken");
   const activePath = getActiveRoute();
 
-  // If no token and not on login/register page, redirect to login
   if (!userToken && activePath !== "/login" && activePath !== "/register") {
     window.location.hash = "#/login";
   } else if (
     userToken &&
     (activePath === "/login" || activePath === "/register")
   ) {
-    // If token exists and user tries to access login/register page, redirect to home
     window.location.hash = "#/";
   } else {
-    // Render the page if token exists or if it's login/register page without token
     await app.renderPage();
   }
 

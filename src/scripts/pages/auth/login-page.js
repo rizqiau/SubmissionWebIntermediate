@@ -7,7 +7,7 @@ class LoginPage {
   }
 
   async render() {
-    return '<div id="login-container"></div>'; // Kontainer untuk view login
+    return '<div id="login-container"></div>';
   }
 
   async afterRender() {
@@ -18,7 +18,7 @@ class LoginPage {
     new LoginPresenter({
       view: loginView,
       onLoginSuccess: () => {
-        window.location.hash = "#/"; // Redirect ke home setelah login berhasil
+        window.location.hash = "#/";
       },
       onLoginError: (message) => {
         console.error("Login failed:", message);
@@ -26,9 +26,7 @@ class LoginPage {
     });
   }
 
-  #renderUI() {
-    // Kosongkan dulu. Implementasi UI ViewTransition akan di sini.
-  }
+  #renderUI() {}
 }
 
 export default LoginPage;

@@ -1,4 +1,4 @@
-import { loginUser } from "../../data/api"; //
+import { loginUser } from "../../data/api";
 
 class LoginPresenter {
   #view = null;
@@ -14,8 +14,9 @@ class LoginPresenter {
   }
 
   async _login(data) {
+    this.#view.showLoading();
     try {
-      const response = await loginUser(data); //
+      const response = await loginUser(data);
       if (response.error) {
         this.#view.showLoginError(response.message);
         if (this.#onLoginError) {
@@ -33,6 +34,8 @@ class LoginPresenter {
       if (this.#onLoginError) {
         this.#onLoginError("Terjadi kesalahan saat login.");
       }
+    } finally {
+      this.#view.hideLoading();
     }
   }
 }

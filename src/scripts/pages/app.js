@@ -37,41 +37,28 @@ class App {
   }
 
   _setupNavigation() {
-    // Pastikan event listener hanya dipasang sekali untuk elemen yang sama
-    // atau, lebih baik, pasang ulang setiap kali halaman dirender
-    // atau menggunakan event delegation jika memungkinkan.
-    // Untuk kasus ini, karena tombol navigasi ada di HTML statis, kita bisa pasang sekali.
-    // Tetapi jika ada tombol logout di dalam halaman yang di-render,
-    // kita perlu memanggilnya setelah render.
-
-    // Logout functionality
     const logoutButton = document.querySelector("#logoutButton");
     if (logoutButton) {
-      // Pastikan event listener tidak diduplikasi
-      logoutButton.removeEventListener("click", this._handleLogout); // Hapus listener lama jika ada
-      logoutButton.addEventListener("click", this._handleLogout); // Pasang listener baru
+      logoutButton.removeEventListener("click", this._handleLogout);
+      logoutButton.addEventListener("click", this._handleLogout);
     }
 
-    // Add new story button functionality
     const addStoryButton = document.querySelector("#addStoryButton");
     if (addStoryButton) {
-      addStoryButton.removeEventListener("click", this._handleAddStory); // Hapus listener lama jika ada
-      addStoryButton.addEventListener("click", this._handleAddStory); // Pasang listener baru
+      addStoryButton.removeEventListener("click", this._handleAddStory);
+      addStoryButton.addEventListener("click", this._handleAddStory);
     }
 
-    // Update navigation visibility should also be called here
     this._updateNavigationVisibility();
   }
 
   _handleLogout = (event) => {
-    // Gunakan arrow function untuk mempertahankan 'this'
     event.preventDefault();
     localStorage.removeItem("userToken");
     window.location.hash = "#/login";
   };
 
   _handleAddStory = (event) => {
-    // Gunakan arrow function untuk mempertahankan 'this'
     event.preventDefault();
     window.location.hash = "#/add-story";
   };
@@ -81,10 +68,9 @@ class App {
     const page = routes[url];
 
     if (page && typeof page.beforeRender === "function") {
-      await page.beforeRender(); // Call beforeRender for cleanup
+      await page.beforeRender();
     }
 
-    // Use View Transitions API if supported
     if (document.startViewTransition) {
       document.startViewTransition(async () => {
         this.#content.innerHTML = await page.render();
@@ -92,13 +78,11 @@ class App {
         this._setupNavigation();
       });
     } else {
-      // Fallback for browsers not supporting View Transitions
       this.#content.innerHTML = await page.render();
       await page.afterRender();
       this._setupNavigation();
     }
 
-    // Update navigation visibility based on login status
     this._updateNavigationVisibility();
   }
 

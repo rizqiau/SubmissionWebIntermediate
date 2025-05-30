@@ -1,12 +1,11 @@
 import { addStory } from "../../data/api";
-import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
-import L from "leaflet"; // Import Leaflet library
-import CONFIG from "../../config"; // Import CONFIG to get MAPTILER_API_KEY
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import CONFIG from "../../config";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
-// Konfigurasi ulang ikon default Leaflet
 L.Marker.prototype.options.icon = L.icon({
   iconRetinaUrl,
   iconUrl,
@@ -21,8 +20,8 @@ L.Marker.prototype.options.icon = L.icon({
 class AddStoryPresenter {
   #view = null;
   #map = null;
-  #marker = null; // To store the selected location marker
-  #onAddStorySuccess = null; // Deklarasi private field yang hilang
+  #marker = null;
+  #onAddStorySuccess = null;
   #onAddStoryError = null;
 
   constructor({ view, onAddStorySuccess, onAddStoryError }) {
@@ -72,10 +71,10 @@ class AddStoryPresenter {
     }
 
     if (this.#map) {
-      this.#map.remove(); // Remove existing map if any
+      this.#map.remove();
     }
 
-    this.#map = L.map(this.#view.addStoryMapContainer).setView([0, 0], 2); // Default view
+    this.#map = L.map(this.#view.addStoryMapContainer).setView([0, 0], 2);
 
     const mapTilerTileUrl = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${CONFIG.MAPTILER_API_KEY}`;
     L.tileLayer(mapTilerTileUrl, {
@@ -83,24 +82,20 @@ class AddStoryPresenter {
         '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
     }).addTo(this.#map);
 
-    // Event listener for map click to get coordinates
     this.#map.on("click", (e) => {
       const { lat, lng } = e.latlng;
       this.#view.updateCoordinatesDisplay(lat, lng);
 
-      // Remove previous marker if exists
       if (this.#marker) {
         this.#map.removeLayer(this.#marker);
       }
 
-      // Add new marker
       this.#marker = L.marker([lat, lng])
         .addTo(this.#map)
         .bindPopup(`Lokasi terpilih: ${lat.toFixed(5)}, ${lng.toFixed(5)}`)
         .openPopup();
     });
 
-    // Try to get current location
     this.#map.locate({ setView: true, maxZoom: 16 });
     this.#map.on("locationfound", (e) => {
       const { lat, lng } = e.latlng;
@@ -122,7 +117,6 @@ class AddStoryPresenter {
     });
   }
 
-  // Method to remove map instance when leaving the page (important for memory management)
   destroyMap() {
     if (this.#map) {
       this.#map.remove();

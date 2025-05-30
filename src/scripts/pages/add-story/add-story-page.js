@@ -5,7 +5,7 @@ class AddStoryPage {
   #presenter = null;
 
   async render() {
-    return '<div id="add-story-container"></div>'; // Kontainer untuk view
+    return '<div id="add-story-container"></div>';
   }
 
   async afterRender() {
@@ -16,17 +16,16 @@ class AddStoryPage {
     this.#presenter = new AddStoryPresenter({
       view: addStoryView,
       onAddStorySuccess: () => {
-        window.location.hash = "#/"; // Redirect ke home setelah berhasil
+        window.location.hash = "#/";
       },
       onAddStoryError: (message) => {
         console.error("Add story failed:", message);
       },
     });
 
-    this.#presenter.initMap(); // Initialize map when page is rendered
+    this.#presenter.initMap();
   }
 
-  // Clean up map when navigating away
   async beforeRender() {
     if (this.#presenter) {
       this.#presenter.destroyMap();

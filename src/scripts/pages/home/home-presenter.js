@@ -1,6 +1,6 @@
 import { getAllStories } from "../../data/api";
-import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
-import L from "leaflet"; // Import Leaflet library
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 import CONFIG from "../../config";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
@@ -34,12 +34,12 @@ class HomePresenter {
         this.#view.hideLoading();
         return;
       }
-      const response = await getAllStories({ token, location: 1 }); // Request stories with location
+      const response = await getAllStories({ token, location: 1 });
       if (response.error) {
         this.#view.showError(response.message);
       } else {
         this.#view.renderStories(response.listStory);
-        this._initMap(response.listStory); // Initialize map with stories
+        this._initMap(response.listStory);
       }
     } catch (error) {
       console.error("Error loading stories:", error);
@@ -59,14 +59,12 @@ class HomePresenter {
       return;
     }
 
-    // Ensure map is only initialized once
     if (this.#map) {
       this.#map.remove();
     }
 
-    this.#map = L.map(this.#view.mapContainer).setView([0, 0], 2); // Default view, will adjust with markers
+    this.#map = L.map(this.#view.mapContainer).setView([0, 0], 2);
 
-    // Add MapTiler background tile layer
     const mapTilerTileUrl = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${CONFIG.MAPTILER_API_KEY}`;
     L.tileLayer(mapTilerTileUrl, {
       attribution:
@@ -88,7 +86,7 @@ class HomePresenter {
 
     if (markers.length > 0) {
       const group = new L.featureGroup(markers);
-      this.#map.fitBounds(group.getBounds()); // Adjust map zoom to fit all markers
+      this.#map.fitBounds(group.getBounds());
     }
   }
 }

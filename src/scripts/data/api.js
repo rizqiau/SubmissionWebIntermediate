@@ -32,7 +32,7 @@ export async function loginUser({ email, password }) {
   });
   const data = await response.json();
   if (!data.error) {
-    localStorage.setItem("userToken", data.loginResult.token); // Store the token
+    localStorage.setItem("userToken", data.loginResult.token);
   }
   return data;
 }

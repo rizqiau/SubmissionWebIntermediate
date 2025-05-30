@@ -1,4 +1,4 @@
-import { registerUser } from "../../data/api"; //
+import { registerUser } from "../../data/api";
 
 class RegisterPresenter {
   #view = null;
@@ -14,8 +14,9 @@ class RegisterPresenter {
   }
 
   async _register(data) {
+    this.#view.showLoading();
     try {
-      const response = await registerUser(data); //
+      const response = await registerUser(data);
       if (response.error) {
         this.#view.showRegisterError(response.message);
         if (this.#onRegisterError) {
@@ -33,6 +34,8 @@ class RegisterPresenter {
       if (this.#onRegisterError) {
         this.#onRegisterError("Terjadi kesalahan saat registrasi.");
       }
+    } finally {
+      this.#view.hideLoading();
     }
   }
 }

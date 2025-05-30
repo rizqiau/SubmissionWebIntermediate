@@ -7,7 +7,7 @@ class RegisterPage {
   }
 
   async render() {
-    return '<div id="register-container"></div>'; // Kontainer untuk view register
+    return '<div id="register-container"></div>';
   }
 
   async afterRender() {
@@ -18,7 +18,7 @@ class RegisterPage {
     new RegisterPresenter({
       view: registerView,
       onRegisterSuccess: () => {
-        window.location.hash = "#/login"; // Redirect ke login setelah register berhasil
+        window.location.hash = "#/login";
       },
       onRegisterError: (message) => {
         console.error("Registration failed:", message);
@@ -26,9 +26,7 @@ class RegisterPage {
     });
   }
 
-  #renderUI() {
-    // Kosongkan dulu. Implementasi UI ViewTransition akan di sini.
-  }
+  #renderUI() {}
 }
 
 export default RegisterPage;

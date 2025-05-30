@@ -32,7 +32,7 @@ class HomeView {
 
   showLoading() {
     this.loadingIndicator.style.display = "block";
-    this.storiesContainer.innerHTML = ""; // Clear previous stories
+    this.storiesContainer.innerHTML = "";
     this.errorMessage.style.display = "none";
   }
 
@@ -47,7 +47,7 @@ class HomeView {
 
   renderStories(stories) {
     if (!this.storiesContainer) return;
-    this.storiesContainer.innerHTML = ""; // Clear previous stories
+    this.storiesContainer.innerHTML = "";
     if (stories.length === 0) {
       this.storiesContainer.innerHTML = "<p>Belum ada story.</p>";
       return;
@@ -75,9 +75,7 @@ class HomeView {
     });
   }
 
-  initMap() {
-    // This will be implemented by the presenter, but the container is here
-  }
+  initMap() {}
 }
 
 export default HomeView;

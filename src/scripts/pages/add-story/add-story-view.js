@@ -1,37 +1,42 @@
 class AddStoryView {
   getTemplate() {
     return `
-        <section class="container">
-          <h1>Tambah Story Baru</h1>
-          <form id="addStoryForm">
-            <div class="form-group">
-              <label for="description">Deskripsi</label>
-              <textarea id="description" name="description" rows="5" required></textarea>
+        <section class="container add-story-section">
+        <h1>Tambah Story Baru</h1>
+        <form id="addStoryForm" class="add-story-form">
+          <div class="form-group">
+            <label for="description">Deskripsi Story</label>
+            <textarea id="description" name="description" rows="5" required placeholder="Ceritakan story Anda di sini..."></textarea>
+          </div>
+
+          <div class="form-group photo-upload-group">
+            <input type="file" id="photo" name="photo" accept="image/*" capture="camera" required>
+            <div class="preview-area">
+              <img id="imagePreview" src="#" alt="Pratinjau Gambar" class="image-preview" style="display:none;">
+              <p id="imagePlaceholder" class="image-placeholder">Tidak ada gambar yang dipilih</p>
             </div>
-  
-            <div class="form-group">
-              <label for="photo">Ambil Gambar</label>
-              <input type="file" id="photo" name="photo" accept="image/*" capture="camera" required>
-              <div class="preview-area">
-                <img id="imagePreview" src="#" alt="Image Preview" style="display:none; max-width: 100%; height: auto; margin-top: 10px;">
-              </div>
+          </div>
+
+          <div class="form-group location-map-group">
+            <label>Pilih Lokasi di Peta (Opsional)</label>
+            <div id="add-story-map" class="map-container add-story-map"></div>
+            <p class="map-instruction">Klik pada peta untuk menandai lokasi story Anda.</p>
+            <div class="coordinates-display">
+              <p>Latitude: <span id="latValue" class="coordinate-value"></span></p>
+              <p>Longitude: <span id="lonValue" class="coordinate-value"></span></p>
             </div>
-  
-            <div class="form-group">
-              <label>Pilih Lokasi di Peta (Opsional)</label>
-              <div id="add-story-map" class="map-container"></div>
-              <p>Klik pada peta untuk memilih lokasi.</p>
-              <p>Latitude: <span id="latValue"></span></p>
-              <p>Longitude: <span id="lonValue"></span></p>
-              <input type="hidden" id="lat" name="lat">
-              <input type="hidden" id="lon" name="lon">
-            </div>
-  
-            <button type="submit">Tambah Story</button>
-          </form>
-          <div id="loading-indicator" class="loading-indicator" style="display:none;">Uploading...</div>
-          <div id="error-message" class="error-message" style="display:none;"></div>
-        </section>
+            <input type="hidden" id="lat" name="lat">
+            <input type="hidden" id="lon" name="lon">
+          </div>
+
+          <button type="submit" class="submit-button">Tambah Story</button>
+        </form>
+        <div id="loading-indicator" class="loading-indicator" style="display:none;">
+          <div class="spinner"></div>
+          <p>Mengunggah story...</p>
+        </div>
+        <div id="error-message" class="error-message" style="display:none;"></div>
+      </section>
       `;
   }
 
@@ -79,6 +84,11 @@ class AddStoryView {
     return document.querySelector("#error-message");
   }
 
+  get imagePlaceholder() {
+    // New getter
+    return document.querySelector("#imagePlaceholder");
+  }
+
   bindAddStoryEvent(callback) {
     this.form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -108,11 +118,13 @@ class AddStoryView {
       reader.onload = (e) => {
         this.imagePreview.src = e.target.result;
         this.imagePreview.style.display = "block";
+        this.imagePlaceholder.style.display = "none";
       };
       reader.readAsDataURL(file);
     } else {
       this.imagePreview.src = "#";
       this.imagePreview.style.display = "none";
+      this.imagePlaceholder.style.display = "block";
     }
   }
 
@@ -124,21 +136,21 @@ class AddStoryView {
   }
 
   showLoading() {
-    this.loadingIndicator.style.display = "block";
+    this.loadingIndicator.style.display = "flex";
     this.errorMessage.style.display = "none";
-    this.form.querySelector('button[type="submit"]').disabled = true; // Disable button
+    this.form.querySelector('button[type="submit"]').disabled = true;
   }
 
   hideLoading() {
     this.loadingIndicator.style.display = "none";
-    this.form.querySelector('button[type="submit"]').disabled = false; // Enable button
+    this.form.querySelector('button[type="submit"]').disabled = false;
   }
 
   showSuccess(message) {
     alert(message);
     this.form.reset();
-    this.displayImagePreview(null); // Clear image preview
-    this.updateCoordinatesDisplay(null, null); // Clear coordinates
+    this.displayImagePreview(null);
+    this.updateCoordinatesDisplay(null, null);
   }
 
   showError(message) {
