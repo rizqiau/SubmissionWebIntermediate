@@ -1,4 +1,6 @@
+// src/scripts/data/api.js
 import CONFIG from "../config";
+import { getToken, setToken } from "./auth-helper"; // Import setToken dan getToken
 
 const API_BASE_URL = CONFIG.BASE_URL;
 
@@ -32,7 +34,7 @@ export async function loginUser({ email, password }) {
   });
   const data = await response.json();
   if (!data.error) {
-    localStorage.setItem("userToken", data.loginResult.token);
+    setToken(data.loginResult.token); // Menggunakan setToken dari auth-helper
   }
   return data;
 }
@@ -53,6 +55,11 @@ export async function addStory({
   const headers = {};
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  } else {
+    const storedToken = getToken(); // Menggunakan getToken dari auth-helper
+    if (storedToken) {
+      headers["Authorization"] = `Bearer ${storedToken}`;
+    }
   }
 
   const endpoint = token ? ENDPOINTS.ADD_STORY : ENDPOINTS.ADD_STORY_GUEST;
@@ -80,7 +87,7 @@ export async function getAllStories({
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   } else {
-    const storedToken = localStorage.getItem("userToken");
+    const storedToken = getToken(); // Menggunakan getToken dari auth-helper
     if (storedToken) {
       headers["Authorization"] = `Bearer ${storedToken}`;
     }
@@ -101,7 +108,7 @@ export async function getDetailStory(id, token = null) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   } else {
-    const storedToken = localStorage.getItem("userToken");
+    const storedToken = getToken(); // Menggunakan getToken dari auth-helper
     if (storedToken) {
       headers["Authorization"] = `Bearer ${storedToken}`;
     }

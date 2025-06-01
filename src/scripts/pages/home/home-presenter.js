@@ -1,3 +1,4 @@
+// src/scripts/pages/home/home-presenter.js
 import { getAllStories } from "../../data/api";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -28,15 +29,30 @@ class HomePresenter {
   async loadStories() {
     this.#view.showLoading();
     try {
-      const token = localStorage.getItem("userToken");
-      if (!token) {
-        this.#view.showError("Anda harus login untuk melihat story.");
-        this.#view.hideLoading();
-        return;
-      }
-      const response = await getAllStories({ token, location: 1 });
+      // Menghapus baris ini karena getAllStories akan mengambil token secara internal
+      // const token = localStorage.getItem("userToken");
+      // if (!token) {
+      //   this.#view.showError("Anda harus login untuk melihat story.");
+      //   this.#view.hideLoading();
+      //   return;
+      // }
+
+      // Panggil getAllStories tanpa perlu mengirim token secara eksplisit jika api.js yang menanganinya
+      const response = await getAllStories({ location: 1 }); // Menghapus `token` dari parameter
+
       if (response.error) {
-        this.#view.showError(response.message);
+        // Jika responsenya error dan menyangkut otentikasi, mungkin perlu redirect ke login
+        // Ini bisa menjadi penanganan yang lebih baik jika error.message menunjukkan token tidak valid
+        if (
+          response.message.includes("Unauthenticated") ||
+          response.message.includes("Token is missing")
+        ) {
+          this.#view.showError("Anda harus login untuk melihat story.");
+          // Opsional: Redirect ke halaman login jika token tidak valid
+          window.location.hash = "#/login";
+        } else {
+          this.#view.showError(response.message);
+        }
       } else {
         this.#view.renderStories(response.listStory);
         this._initMap(response.listStory);

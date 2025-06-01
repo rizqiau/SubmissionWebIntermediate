@@ -1,5 +1,7 @@
+// src/scripts/pages/app.js
 import routes from "../routes/routes";
 import { getActiveRoute } from "../routes/url-parser";
+import { getToken, removeToken } from "../data/auth-helper"; // Import getToken dan removeToken
 
 class App {
   #content = null;
@@ -54,7 +56,7 @@ class App {
 
   _handleLogout = (event) => {
     event.preventDefault();
-    localStorage.removeItem("userToken");
+    removeToken(); // Menggunakan removeToken dari auth-helper
     window.location.hash = "#/login";
   };
 
@@ -87,17 +89,9 @@ class App {
   }
 
   _updateNavigationVisibility() {
-    const userToken = localStorage.getItem("userToken");
+    const userToken = getToken(); // Menggunakan getToken dari auth-helper
     const authenticatedLinks = document.querySelectorAll(".authenticated");
     const guestLinks = document.querySelectorAll(".guest");
-
-    if (userToken) {
-      authenticatedLinks.forEach((link) => (link.style.display = "block"));
-      guestLinks.forEach((link) => (link.style.display = "none"));
-    } else {
-      authenticatedLinks.forEach((link) => (link.style.display = "block"));
-      guestLinks.forEach((link) => (link.style.display = "none"));
-    }
 
     if (userToken) {
       authenticatedLinks.forEach((link) => (link.style.display = "block"));

@@ -1,3 +1,4 @@
+// src/scripts/pages/add-story/add-story-presenter.js
 import { addStory } from "../../data/api";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -5,6 +6,7 @@ import CONFIG from "../../config";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { getToken } from "../../data/auth-helper"; // Import getToken dari auth-helper
 
 L.Marker.prototype.options.icon = L.icon({
   iconRetinaUrl,
@@ -23,6 +25,7 @@ class AddStoryPresenter {
   #marker = null;
   #onAddStorySuccess = null;
   #onAddStoryError = null;
+  #cameraStream = null; // Tambahkan properti untuk stream kamera
 
   constructor({ view, onAddStorySuccess, onAddStoryError }) {
     this.#view = view;
@@ -30,12 +33,19 @@ class AddStoryPresenter {
     this.#view.bindPhotoInputChange(this._handlePhotoChange.bind(this));
     this.#onAddStorySuccess = onAddStorySuccess;
     this.#onAddStoryError = onAddStoryError;
+
+    // Bind event untuk kamera
+    this.#view.bindCameraEvents({
+      onStart: this._startCamera.bind(this),
+      onTakePicture: this._takePicture.bind(this),
+      onStop: this._stopCamera.bind(this),
+    });
   }
 
   async _addStory(data) {
     this.#view.showLoading();
     try {
-      const token = localStorage.getItem("userToken");
+      const token = getToken();
       if (!token) {
         this.#view.showError("Anda harus login untuk menambah story.");
         this.#view.hideLoading();
@@ -62,9 +72,58 @@ class AddStoryPresenter {
 
   _handlePhotoChange(file) {
     this.#view.displayImagePreview(file);
+    this._stopCamera(); // Pastikan kamera mati jika memilih file
+  }
+
+  async _startCamera() {
+    try {
+      this.#cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+      this.#view.cameraFeed.srcObject = this.#cameraStream;
+      this.#view.cameraFeed.play();
+      this.#view.showCameraFeed();
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      alert(
+        "Gagal mengakses kamera. Pastikan Anda memberikan izin dan tidak ada aplikasi lain yang menggunakan kamera."
+      );
+      this.#view.hideCameraControls(); // Sembunyikan kontrol kamera jika gagal
+    }
+  }
+
+  _takePicture() {
+    const video = this.#view.cameraFeed;
+    const canvas = this.#view.cameraCanvas;
+    const context = canvas.getContext("2d");
+
+    // Pastikan video sudah ada dan terputar
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL("image/png");
+      this.#view.displayImageFromDataUrl(dataUrl);
+
+      // Setelah mengambil gambar, Anda mungkin ingin menghentikan stream
+      this._stopCamera();
+    } else {
+      alert("Kamera belum siap untuk mengambil gambar.");
+    }
+  }
+
+  _stopCamera() {
+    if (this.#cameraStream) {
+      this.#cameraStream.getTracks().forEach((track) => track.stop());
+      this.#cameraStream = null;
+      this.#view.cameraFeed.srcObject = null;
+      this.#view.hideCameraControls(); // Sembunyikan kembali kontrol kamera
+    }
   }
 
   initMap() {
+    // ... kode initMap yang sudah ada ...
     if (!this.#view.addStoryMapContainer) {
       console.error("Add Story map container not found.");
       return;
@@ -123,6 +182,7 @@ class AddStoryPresenter {
       this.#map = null;
       this.#marker = null;
     }
+    this._stopCamera(); // Pastikan kamera juga berhenti saat halaman add-story ditinggalkan
   }
 }
 
