@@ -1,4 +1,3 @@
-// src/scripts/data/auth-helper.js
 function getToken() {
   return localStorage.getItem("userToken");
 }

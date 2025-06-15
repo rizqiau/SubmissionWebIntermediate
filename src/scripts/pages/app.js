@@ -1,12 +1,12 @@
-// src/scripts/pages/app.js
 import routes from "../routes/routes";
 import { getActiveRoute } from "../routes/url-parser";
-import { getToken, removeToken } from "../data/auth-helper"; // Import getToken dan removeToken
+import { getToken, removeToken } from "../data/auth-helper";
 
 class App {
   #content = null;
   #drawerButton = null;
   #navigationDrawer = null;
+  #currentPageInstance = null;
 
   constructor({ navigationDrawer, drawerButton, content }) {
     this.#content = content;
@@ -56,7 +56,7 @@ class App {
 
   _handleLogout = (event) => {
     event.preventDefault();
-    removeToken(); // Menggunakan removeToken dari auth-helper
+    removeToken();
     window.location.hash = "#/login";
   };
 
@@ -69,9 +69,14 @@ class App {
     const url = getActiveRoute();
     const page = routes[url];
 
-    if (page && typeof page.beforeRender === "function") {
-      await page.beforeRender();
+    if (
+      this.#currentPageInstance &&
+      typeof this.#currentPageInstance.beforeRender === "function"
+    ) {
+      await this.#currentPageInstance.beforeRender();
     }
+
+    this.#currentPageInstance = page;
 
     if (document.startViewTransition) {
       document.startViewTransition(async () => {
@@ -89,7 +94,7 @@ class App {
   }
 
   _updateNavigationVisibility() {
-    const userToken = getToken(); // Menggunakan getToken dari auth-helper
+    const userToken = getToken();
     const authenticatedLinks = document.querySelectorAll(".authenticated");
     const guestLinks = document.querySelectorAll(".guest");
 

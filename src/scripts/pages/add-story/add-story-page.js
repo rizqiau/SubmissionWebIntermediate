@@ -1,7 +1,9 @@
 import AddStoryView from "./add-story-view";
 import AddStoryPresenter from "./add-story-presenter";
+import CONFIG from "../../config";
 
 class AddStoryPage {
+  #view = null;
   #presenter = null;
 
   async render() {
@@ -10,25 +12,28 @@ class AddStoryPage {
 
   async afterRender() {
     const addStoryContainer = document.querySelector("#add-story-container");
-    const addStoryView = new AddStoryView();
-    addStoryContainer.innerHTML = addStoryView.getTemplate();
+    this.#view = new AddStoryView();
+    addStoryContainer.innerHTML = this.#view.getTemplate();
 
     this.#presenter = new AddStoryPresenter({
-      view: addStoryView,
+      view: this.#view,
       onAddStorySuccess: () => {
+        alert("Story berhasil ditambahkan!");
         window.location.hash = "#/";
       },
+
       onAddStoryError: (message) => {
         console.error("Add story failed:", message);
       },
     });
 
-    this.#presenter.initMap();
+    this.#presenter.initMapAndCamera(CONFIG.MAPTILER_API_KEY);
   }
 
   async beforeRender() {
-    if (this.#presenter) {
-      this.#presenter.destroyMap();
+    console.log("AddStoryPage: beforeRender called, cleaning up view.");
+    if (this.#view) {
+      this.#view.cleanup();
     }
   }
 }

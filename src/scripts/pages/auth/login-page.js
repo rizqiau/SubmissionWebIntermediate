@@ -2,9 +2,8 @@ import LoginView from "./login-view";
 import LoginPresenter from "./login-presenter";
 
 class LoginPage {
-  constructor() {
-    this.#renderUI();
-  }
+  #view = null;
+  constructor() {}
 
   async render() {
     return '<div id="login-container"></div>';
@@ -12,11 +11,11 @@ class LoginPage {
 
   async afterRender() {
     const loginContainer = document.querySelector("#login-container");
-    const loginView = new LoginView();
-    loginContainer.innerHTML = loginView.getTemplate();
+    this.#view = new LoginView();
+    loginContainer.innerHTML = this.#view.getTemplate();
 
     new LoginPresenter({
-      view: loginView,
+      view: this.#view,
       onLoginSuccess: () => {
         window.location.hash = "#/";
       },
@@ -25,8 +24,6 @@ class LoginPage {
       },
     });
   }
-
-  #renderUI() {}
 }
 
 export default LoginPage;

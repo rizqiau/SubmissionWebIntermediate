@@ -1,10 +1,9 @@
-// src/scripts/index.js
 import "../styles/styles.css";
 
 import App from "./pages/app";
 import { getActiveRoute } from "./routes/url-parser";
-import { getToken } from "./data/auth-helper"; // Import getToken
-import { removeToken } from "./data/auth-helper"; // Import removeToken
+import { getToken } from "./data/auth-helper";
+import { removeToken } from "./data/auth-helper";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const app = new App({
@@ -26,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  const userToken = getToken(); // Menggunakan getToken dari auth-helper
+  const userToken = getToken();
   const activePath = getActiveRoute();
 
   if (!userToken && activePath !== "/login" && activePath !== "/register") {
@@ -41,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   window.addEventListener("hashchange", async () => {
-    const updatedUserToken = getToken(); // Menggunakan getToken dari auth-helper
+    const updatedUserToken = getToken();
     const currentActivePath = getActiveRoute();
 
     if (

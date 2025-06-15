@@ -1,8 +1,28 @@
-// src/scripts/pages/add-story/add-story-view.js
+import L from "leaflet";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+
+L.Marker.prototype.options.icon = L.icon({
+  iconRetinaUrl,
+  iconUrl,
+  shadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41],
+});
+
 class AddStoryView {
+  #map = null;
+  #marker = null;
+  #currentStream = null;
+  #capturedImageBlob = null;
+
   getTemplate() {
     return `
-        <section class="container add-story-section">
+      <section class="container add-story-section">
         <h1>Tambah Story Baru</h1>
         <form id="addStoryForm" class="add-story-form">
           <div class="form-group">
@@ -11,19 +31,19 @@ class AddStoryView {
           </div>
 
           <div class="form-group photo-upload-group">
-            <label>Ambil Foto atau Unggah</label>
-            <video id="cameraFeed" class="image-preview" autoplay style="display:none; width: 100%; max-height: 250px; object-fit: contain;"></video>
-            <button type="button" id="startCameraButton" class="submit-button" style="margin-top: 10px;">Buka Kamera</button>
-            <button type="button" id="takePictureButton" class="submit-button" style="margin-top: 10px; display:none;">Ambil Gambar</button>
-            <button type="button" id="stopCameraButton" class="submit-button" style="margin-top: 10px; background-color: #dc3545; display:none;">Tutup Kamera</button>
+            <label>Gambar Story</label>
+            <div class="camera-controls">
+              <button type="button" id="openCameraButton" class="btn btn-primary">Buka Kamera <span class="camera-icon">📷</span></button>
+              <input type="file" id="photoFileInput" name="photo" accept="image/*" class="hidden-file-input">
+              <label for="photoFileInput" class="btn btn-secondary">Pilih dari Galeri</label>
+            </div>
 
-            <canvas id="cameraCanvas" style="display:none;"></canvas>
-
-            <input type="file" id="photo" name="photo" accept="image/*" style="margin-top: 15px;">
             <div class="preview-area">
               <img id="imagePreview" src="#" alt="Pratinjau Gambar" class="image-preview" style="display:none;">
+              <video id="videoPreview" class="video-preview" autoplay style="display:none;"></video>
               <p id="imagePlaceholder" class="image-placeholder">Tidak ada gambar yang dipilih</p>
             </div>
+            <button type="button" id="takePictureButton" class="btn btn-success" style="display:none;">Ambil Foto</button>
           </div>
 
           <div class="form-group location-map-group">
@@ -45,8 +65,9 @@ class AddStoryView {
           <p>Mengunggah story...</p>
         </div>
         <div id="error-message" class="error-message" style="display:none;"></div>
+        <div id="map-error-message" class="error-message" style="display:none;"></div>
       </section>
-      `;
+    `;
   }
 
   get form() {
@@ -57,12 +78,20 @@ class AddStoryView {
     return document.querySelector("#description");
   }
 
-  get photoInput() {
-    return document.querySelector("#photo");
+  get photoFileInput() {
+    return document.querySelector("#photoFileInput");
   }
 
   get imagePreview() {
     return document.querySelector("#imagePreview");
+  }
+
+  get imagePlaceholder() {
+    return document.querySelector("#imagePlaceholder");
+  }
+
+  get videoPreview() {
+    return document.querySelector("#videoPreview");
   }
 
   get addStoryMapContainer() {
@@ -93,77 +122,66 @@ class AddStoryView {
     return document.querySelector("#error-message");
   }
 
-  get imagePlaceholder() {
-    return document.querySelector("#imagePlaceholder");
+  get mapErrorMessage() {
+    return document.querySelector("#map-error-message");
   }
 
-  // New getters for camera elements
-  get cameraFeed() {
-    return document.querySelector("#cameraFeed");
+  get openCameraButton() {
+    return document.querySelector("#openCameraButton");
   }
-
-  get cameraCanvas() {
-    return document.querySelector("#cameraCanvas");
-  }
-
-  get startCameraButton() {
-    return document.querySelector("#startCameraButton");
-  }
-
   get takePictureButton() {
     return document.querySelector("#takePictureButton");
-  }
-
-  get stopCameraButton() {
-    return document.querySelector("#stopCameraButton");
   }
 
   bindAddStoryEvent(callback) {
     this.form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const photoFile = this.photoInput.files[0];
-      // Pastikan ada file dari input atau dari kamera
-      if (!photoFile && !this.imagePreview.src.startsWith("data:image")) {
-        // Cek juga jika ada gambar dari kamera
-        alert("Harap pilih gambar atau ambil foto dengan kamera.");
+      let photoToUpload = null;
+      if (this.#capturedImageBlob) {
+        photoToUpload = this.#capturedImageBlob;
+      } else if (this.photoFileInput.files[0]) {
+        photoToUpload = this.photoFileInput.files[0];
+      }
+
+      if (!photoToUpload) {
+        this.showError("Harap pilih atau ambil gambar.");
         return;
       }
-
-      // Jika ada gambar dari kamera, gunakan itu
-      let finalPhoto = photoFile;
-      if (
-        this.imagePreview.src.startsWith("data:image") &&
-        this.imagePreview.style.display !== "none"
-      ) {
-        // Convert data URL to Blob (File-like object)
-        const dataUrl = this.imagePreview.src;
-        const blob = this.dataURItoBlob(dataUrl);
-        // Beri nama file arbitrer
-        finalPhoto = new File([blob], "camera_capture.png", {
-          type: "image/png",
-        });
-      }
-
       callback({
         description: this.descriptionInput.value,
-        photo: finalPhoto,
+        photo: photoToUpload,
         lat: this.latInput.value ? parseFloat(this.latInput.value) : null,
         lon: this.lonInput.value ? parseFloat(this.lonInput.value) : null,
       });
     });
   }
 
-  bindPhotoInputChange(callback) {
-    this.photoInput.addEventListener("change", (event) => {
-      callback(event.target.files[0]);
+  bindPhotoFileInputChange(callback) {
+    this.photoFileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith("image/")) {
+        this.displayImagePreview(file);
+        this.#capturedImageBlob = file;
+      } else {
+        this.displayImagePreview(null);
+        this.#capturedImageBlob = null;
+      }
+      callback(file);
     });
   }
 
-  // New binding for camera buttons
-  bindCameraEvents({ onStart, onTakePicture, onStop }) {
-    this.startCameraButton.addEventListener("click", onStart);
-    this.takePictureButton.addEventListener("click", onTakePicture);
-    this.stopCameraButton.addEventListener("click", onStop);
+  bindOpenCameraButton(callback) {
+    this.openCameraButton.addEventListener("click", () => {
+      console.log("AddStoryView: Open Camera Button Clicked!");
+      callback();
+    });
+  }
+
+  bindTakePictureButton(callback) {
+    this.takePictureButton.addEventListener("click", () => {
+      this.capturePicture();
+      callback(this.#capturedImageBlob);
+    });
   }
 
   displayImagePreview(file) {
@@ -173,22 +191,88 @@ class AddStoryView {
         this.imagePreview.src = e.target.result;
         this.imagePreview.style.display = "block";
         this.imagePlaceholder.style.display = "none";
+        this.videoPreview.style.display = "none";
+        this.takePictureButton.style.display = "none";
       };
       reader.readAsDataURL(file);
     } else {
       this.imagePreview.src = "#";
       this.imagePreview.style.display = "none";
       this.imagePlaceholder.style.display = "block";
+      this.videoPreview.style.display = "none";
+      this.takePictureButton.style.display = "none";
     }
   }
 
-  // New method to display image from data URL (for camera capture)
-  displayImageFromDataUrl(dataUrl) {
-    this.imagePreview.src = dataUrl;
-    this.imagePreview.style.display = "block";
-    this.imagePlaceholder.style.display = "none";
-    this.cameraFeed.style.display = "none"; // Hide camera feed after picture is taken
-    this.stopCameraFeed(); // Stop camera stream
+  async startCameraStream() {
+    console.log("AddStoryView: startCameraStream called.");
+    try {
+      this.imagePreview.style.display = "none";
+      this.imagePlaceholder.style.display = "none";
+      this.videoPreview.style.display = "block";
+      this.takePictureButton.style.display = "block";
+
+      this.#currentStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
+      this.videoPreview.srcObject = this.#currentStream;
+      console.log(
+        "AddStoryView: Camera stream successfully obtained and assigned."
+      );
+    } catch (error) {
+      console.error("AddStoryView: Error accessing camera:", error);
+      this.videoPreview.style.display = "none";
+      this.takePictureButton.style.display = "none";
+      this.imagePlaceholder.style.display = "block";
+      this.showError("Gagal mengakses kamera. Pastikan Anda memberikan izin.");
+    }
+  }
+
+  stopCameraStream() {
+    console.log("AddStoryView: stopCameraStream called.");
+    if (this.#currentStream) {
+      console.log(
+        "AddStoryView: Active stream found, attempting to stop tracks."
+      );
+      this.#currentStream.getTracks().forEach((track) => {
+        track.stop();
+        console.log(`AddStoryView: Track stopped - ${track.kind}`);
+      });
+      this.#currentStream = null;
+      this.videoPreview.srcObject = null;
+      this.videoPreview.style.display = "none";
+      this.takePictureButton.style.display = "none";
+      this.imagePlaceholder.style.display = "block";
+      console.log("AddStoryView: Camera stream fully stopped.");
+    } else {
+      console.log(
+        "AddStoryView: No active camera stream to stop (this.#currentStream is null or undefined)."
+      );
+    }
+  }
+
+  capturePicture() {
+    if (!this.videoPreview || !this.#currentStream) {
+      this.showError("Tidak ada stream kamera aktif untuk mengambil gambar.");
+      return null;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = this.videoPreview.videoWidth;
+    canvas.height = this.videoPreview.videoHeight;
+    const context = canvas.getContext("2d");
+    context.drawImage(this.videoPreview, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      this.#capturedImageBlob = new File([blob], `photo-${Date.now()}.png`, {
+        type: "image/png",
+      });
+      this.displayImagePreview(this.#capturedImageBlob);
+      this.stopCameraStream();
+    }, "image/png");
+
+    return this.#capturedImageBlob;
   }
 
   updateCoordinatesDisplay(lat, lon) {
@@ -209,58 +293,124 @@ class AddStoryView {
     this.form.querySelector('button[type="submit"]').disabled = false;
   }
 
-  showSuccess(message) {
-    alert(message);
+  showSuccessMessage(message) {
     this.form.reset();
-    this.displayImagePreview(null); // Clear preview for file upload
+    this.displayImagePreview(null);
     this.updateCoordinatesDisplay(null, null);
-    this.hideCameraControls(); // Hide camera controls after success
-    this.stopCameraFeed(); // Stop camera stream
+    if (this.#marker) {
+      this.#map.removeLayer(this.#marker);
+      this.#marker = null;
+    }
+    this.#capturedImageBlob = null;
+    this.showError("");
   }
 
   showError(message) {
-    alert(`Gagal menambah story: ${message}`);
-    this.errorMessage.textContent = `Error: ${message}`;
-    this.errorMessage.style.display = "block";
-  }
-
-  // Helper function to convert data URI to Blob
-  dataURItoBlob(dataURI) {
-    const byteString = atob(dataURI.split(",")[1]);
-    const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+    if (this.errorMessage) {
+      this.errorMessage.textContent = `Error: ${message}`;
+      this.mapErrorMessage.style.display = message ? "block" : "none";
     }
-    return new Blob([ab], { type: mimeString });
   }
 
-  // Camera UI visibility methods
-  showCameraFeed() {
-    this.cameraFeed.style.display = "block";
-    this.startCameraButton.style.display = "none";
-    this.takePictureButton.style.display = "inline-block";
-    this.stopCameraButton.style.display = "inline-block";
-    this.imagePlaceholder.style.display = "none"; // Hide placeholder when camera is active
-    this.imagePreview.style.display = "none"; // Hide image preview if visible
-    this.photoInput.value = ""; // Clear file input if camera is used
-  }
-
-  hideCameraControls() {
-    this.cameraFeed.style.display = "none";
-    this.startCameraButton.style.display = "inline-block";
-    this.takePictureButton.style.display = "none";
-    this.stopCameraButton.style.display = "none";
-    this.imagePlaceholder.style.display = "block"; // Show placeholder when camera is off
-  }
-
-  stopCameraFeed() {
-    if (this.cameraFeed.srcObject) {
-      this.cameraFeed.srcObject.getTracks().forEach((track) => track.stop());
-      this.cameraFeed.srcObject = null;
+  showErrorInMap(message) {
+    if (this.mapErrorMessage) {
+      this.mapErrorMessage.textContent = `Map Error: ${message}`;
+      this.mapErrorMessage.style.display = "block";
     }
-    this.hideCameraControls();
+  }
+
+  initAddStoryMap(maptilerApiKey) {
+    if (!this.addStoryMapContainer) {
+      console.error(
+        "Add Story map container not found in View for map initialization."
+      );
+      return;
+    }
+
+    if (this.#map) {
+      this.#map.remove();
+    }
+
+    this.#map = L.map(this.addStoryMapContainer).setView([0, 0], 2);
+
+    const mapTilerTileUrl = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${maptilerApiKey}`;
+    L.tileLayer(mapTilerTileUrl, {
+      attribution:
+        '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+    }).addTo(this.#map);
+
+    this.#map.invalidateSize();
+  }
+
+  bindMapClickEvent(callback) {
+    if (this.#map) {
+      this.#map.off("click");
+      this.#map.on("click", (e) => {
+        callback(e.latlng);
+      });
+    } else {
+      console.error("Map not initialized for click event binding.");
+    }
+  }
+
+  setMapMarker(latlng, popupContent) {
+    if (this.#marker) {
+      this.#map.removeLayer(this.#marker);
+    }
+    this.#marker = L.marker([latlng.lat, latlng.lng])
+      .addTo(this.#map)
+      .bindPopup(popupContent)
+      .openPopup();
+  }
+
+  locateUser() {
+    if (this.#map) {
+      this.#map.locate({ setView: true, maxZoom: 16 });
+    } else {
+      console.error("Map not initialized for locating user.");
+    }
+  }
+
+  bindLocationFoundEvent(callback) {
+    if (this.#map) {
+      this.#map.off("locationfound");
+      this.#map.on("locationfound", (e) => {
+        callback(e.latlng);
+      });
+    } else {
+      console.error("Map not initialized for location found event binding.");
+    }
+  }
+
+  bindLocationErrorEvent(callback) {
+    if (this.#map) {
+      this.#map.off("locationerror");
+      this.#map.on("locationerror", (e) => {
+        callback(e.message);
+      });
+    } else {
+      console.error("Map not initialized for location error event binding.");
+    }
+  }
+
+  destroyMap() {
+    if (this.#map) {
+      this.#map.remove();
+      this.#map = null;
+      this.#marker = null;
+    }
+  }
+
+  cleanup() {
+    this.destroyMap();
+    this.stopCameraStream();
+    if (this.photoFileInput) {
+      this.photoFileInput.value = "";
+    }
+    this.displayImagePreview(null);
+    this.#capturedImageBlob = null;
+    this.showError("");
+    this.showErrorInMap("");
   }
 }
 

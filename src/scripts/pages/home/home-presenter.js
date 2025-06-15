@@ -1,26 +1,9 @@
-// src/scripts/pages/home/home-presenter.js
 import { getAllStories } from "../../data/api";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import CONFIG from "../../config";
-import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import shadowUrl from "leaflet/dist/images/marker-shadow.png";
-
-L.Marker.prototype.options.icon = L.icon({
-  iconRetinaUrl,
-  iconUrl,
-  shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41],
-});
 
 class HomePresenter {
   #view = null;
-  #map = null;
 
   constructor({ view }) {
     this.#view = view;
@@ -29,33 +12,21 @@ class HomePresenter {
   async loadStories() {
     this.#view.showLoading();
     try {
-      // Menghapus baris ini karena getAllStories akan mengambil token secara internal
-      // const token = localStorage.getItem("userToken");
-      // if (!token) {
-      //   this.#view.showError("Anda harus login untuk melihat story.");
-      //   this.#view.hideLoading();
-      //   return;
-      // }
-
-      // Panggil getAllStories tanpa perlu mengirim token secara eksplisit jika api.js yang menanganinya
-      const response = await getAllStories({ location: 1 }); // Menghapus `token` dari parameter
-
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        this.#view.showError("Anda harus login untuk melihat story.");
+        this.#view.hideLoading();
+        return;
+      }
+      const response = await getAllStories({ token, location: 1 });
       if (response.error) {
-        // Jika responsenya error dan menyangkut otentikasi, mungkin perlu redirect ke login
-        // Ini bisa menjadi penanganan yang lebih baik jika error.message menunjukkan token tidak valid
-        if (
-          response.message.includes("Unauthenticated") ||
-          response.message.includes("Token is missing")
-        ) {
-          this.#view.showError("Anda harus login untuk melihat story.");
-          // Opsional: Redirect ke halaman login jika token tidak valid
-          window.location.hash = "#/login";
-        } else {
-          this.#view.showError(response.message);
-        }
+        this.#view.showError(response.message);
       } else {
         this.#view.renderStories(response.listStory);
-        this._initMap(response.listStory);
+        this.#view.initMapAndMarkers(
+          response.listStory,
+          CONFIG.MAPTILER_API_KEY
+        );
       }
     } catch (error) {
       console.error("Error loading stories:", error);
@@ -64,45 +35,6 @@ class HomePresenter {
       );
     } finally {
       this.#view.hideLoading();
-    }
-  }
-
-  _initMap(stories) {
-    if (!this.#view.mapContainer) {
-      console.error(
-        "Map container not found in HomeView.getTemplate or not yet rendered."
-      );
-      return;
-    }
-
-    if (this.#map) {
-      this.#map.remove();
-    }
-
-    this.#map = L.map(this.#view.mapContainer).setView([0, 0], 2);
-
-    const mapTilerTileUrl = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${CONFIG.MAPTILER_API_KEY}`;
-    L.tileLayer(mapTilerTileUrl, {
-      attribution:
-        '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-    }).addTo(this.#map);
-
-    const markers = [];
-    stories.forEach((story) => {
-      if (story.lat && story.lon) {
-        const marker = L.marker([story.lat, story.lon]).addTo(this.#map)
-          .bindPopup(`
-                <b>${story.name}</b><br>
-                ${story.description}<br>
-                <img src="${story.photoUrl}" alt="Story photo" style="max-width:100px; height:auto;">
-              `);
-        markers.push(marker);
-      }
-    });
-
-    if (markers.length > 0) {
-      const group = new L.featureGroup(markers);
-      this.#map.fitBounds(group.getBounds());
     }
   }
 }

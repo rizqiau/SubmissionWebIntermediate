@@ -2,9 +2,8 @@ import RegisterView from "./register-view";
 import RegisterPresenter from "./register-presenter";
 
 class RegisterPage {
-  constructor() {
-    this.#renderUI();
-  }
+  #view = null;
+  constructor() {}
 
   async render() {
     return '<div id="register-container"></div>';
@@ -12,12 +11,13 @@ class RegisterPage {
 
   async afterRender() {
     const registerContainer = document.querySelector("#register-container");
-    const registerView = new RegisterView();
-    registerContainer.innerHTML = registerView.getTemplate();
+    this.#view = new RegisterView();
+    registerContainer.innerHTML = this.#view.getTemplate();
 
     new RegisterPresenter({
-      view: registerView,
+      view: this.#view,
       onRegisterSuccess: () => {
+        alert("Registrasi Berhasil! Silakan Login.");
         window.location.hash = "#/login";
       },
       onRegisterError: (message) => {
@@ -25,8 +25,6 @@ class RegisterPage {
       },
     });
   }
-
-  #renderUI() {}
 }
 
 export default RegisterPage;
