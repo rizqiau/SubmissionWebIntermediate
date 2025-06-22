@@ -1,0 +1,3 @@
+APP_URL=<url_aplikasi>
+MAP_SERVICE_API_KEY=LEyhgRS7uBCLYm9lN8oW
+NETLIFY=https://symphonious-gnome-ed36db.netlify.app/
