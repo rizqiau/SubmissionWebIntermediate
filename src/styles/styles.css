@@ -532,12 +532,42 @@ footer {
   color: white;
   text-align: center;
   padding: 20px;
-  margin-top: 40px; /* Memberi sedikit jarak dari konten utama */
+  margin-top: 40px;
 }
 
 footer p {
   margin: 0;
   font-size: 0.9rem;
+}
+
+.save-story-button {
+  margin-top: 15px;
+  padding: 8px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+.save-story-button:hover {
+  background-color: #0056b3;
+}
+
+.delete-story-button {
+  margin-top: 15px;
+  padding: 8px 12px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+.delete-story-button:hover {
+  background-color: #c82333;
 }
 
 @media screen and (width > 1000px) {

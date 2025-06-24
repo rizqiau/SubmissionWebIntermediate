@@ -5,6 +5,7 @@ import StoryDatabase from "../../data/database-helper";
 
 class HomePresenter {
   #view = null;
+  #stories = [];
 
   constructor({ view }) {
     this.#view = view;
@@ -23,33 +24,27 @@ class HomePresenter {
       const response = await getAllStories({ token, location: 1 });
       if (response.error) {
         this.#view.showError(response.message);
-        await this._loadFromDatabase();
       } else {
-        await StoryDatabase.clearStories();
-        response.listStory.forEach(async (story) => {
-          await StoryDatabase.putStory(story);
-        });
-        this._renderStoriesFromData(response.listStory);
+        this.#stories = response.listStory;
+        this._renderStoriesFromData(this.#stories);
       }
     } catch (error) {
-      console.error("Error loading stories from network:", error);
+      console.error("Error loading stories:", error);
       this.#view.showError(
-        "Gagal memuat dari network. Mencoba memuat dari database."
+        "Gagal memuat story. Periksa koneksi internet Anda."
       );
-      await this._loadFromDatabase();
     } finally {
       this.#view.hideLoading();
     }
   }
 
-  async _loadFromDatabase() {
-    const stories = await StoryDatabase.getAllStories();
-    if (stories && stories.length > 0) {
-      this._renderStoriesFromData(stories);
+  async saveStory(storyId) {
+    const story = this.#stories.find((s) => s.id === storyId);
+    if (story) {
+      await StoryDatabase.putStory(story);
+      alert(`Story "${story.name}" berhasil disimpan!`);
     } else {
-      this.#view.showError(
-        "Tidak ada data di database. Coba lagi saat online."
-      );
+      alert("Story tidak ditemukan untuk disimpan.");
     }
   }
 

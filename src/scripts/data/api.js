@@ -119,3 +119,43 @@ export async function getDetailStory(id, token = null) {
   });
   return response.json();
 }
+
+export async function subscribePushNotification(subscription) {
+  const token = getToken();
+  if (!token) return Promise.reject(new Error("Anda harus login"));
+
+  const subscriptionData = {
+    endpoint: subscription.endpoint,
+    keys: {
+      p256dh: subscription.toJSON().keys.p256dh,
+      auth: subscription.toJSON().keys.auth,
+    },
+  };
+
+  const response = await fetch(`${API_BASE_URL}/notifications/subscribe`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(subscriptionData),
+  });
+
+  return response.json();
+}
+
+export async function unsubscribePushNotification(subscription) {
+  const token = getToken();
+  if (!token) return Promise.reject(new Error("Anda harus login"));
+
+  const response = await fetch(`${API_BASE_URL}/notifications/subscribe`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
+
+  return response.json();
+}

@@ -74,6 +74,10 @@ class HomeView {
                 ? `<p class="story-location">Lokasi: ${story.lat}, ${story.lon}</p>`
                 : ""
             }
+            <!-- ▼▼▼ TAMBAHKAN TOMBOL SIMPAN DI SINI ▼▼▼ -->
+            <button class="save-story-button" data-id="${
+              story.id
+            }">Simpan Story</button>
           </div>
         </div>
       `;

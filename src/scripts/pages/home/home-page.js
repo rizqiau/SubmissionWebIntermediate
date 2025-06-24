@@ -15,6 +15,14 @@ export default class HomePage {
 
     this.#presenter = new HomePresenter({ view: this.#view });
     await this.#presenter.loadStories();
+
+    const storiesContainer = this.#view.storiesContainer;
+    storiesContainer.addEventListener("click", (event) => {
+      if (event.target.classList.contains("save-story-button")) {
+        const storyId = event.target.dataset.id;
+        this.#presenter.saveStory(storyId);
+      }
+    });
   }
 
   async beforeRender() {

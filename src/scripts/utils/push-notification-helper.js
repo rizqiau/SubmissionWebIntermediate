@@ -1,4 +1,8 @@
 import CONFIG from "../config";
+import {
+  subscribePushNotification,
+  unsubscribePushNotification,
+} from "../data/api";
 
 const PushNotification = {
   async init({ button }) {
@@ -9,12 +13,14 @@ const PushNotification = {
 
     this._button.addEventListener("click", async (event) => {
       event.stopPropagation();
+      this._button.disabled = true;
+
       const subscription = await navigator.serviceWorker.ready.then((sw) =>
         sw.pushManager.getSubscription()
       );
 
       if (subscription) {
-        await this._unsubscribe();
+        await this._unsubscribe(subscription);
       } else {
         await this._subscribe();
       }
@@ -24,14 +30,20 @@ const PushNotification = {
   },
 
   async _updateButtonState() {
-    const subscription = await navigator.serviceWorker.ready.then((sw) =>
-      sw.pushManager.getSubscription()
-    );
-    this._button.disabled = false;
-    if (subscription) {
-      this._button.textContent = "Matikan Notifikasi";
-    } else {
-      this._button.textContent = "Aktifkan Notifikasi";
+    try {
+      const subscription = await navigator.serviceWorker.ready.then((sw) =>
+        sw.pushManager.getSubscription()
+      );
+      this._button.disabled = false;
+      if (subscription) {
+        this._button.textContent = "Matikan Notifikasi";
+      } else {
+        this._button.textContent = "Aktifkan Notifikasi";
+      }
+    } catch (error) {
+      console.error("Error updating button state:", error);
+      this._button.disabled = true;
+      this._button.textContent = "Error";
     }
   },
 
@@ -48,21 +60,27 @@ const PushNotification = {
             CONFIG.VAPID_PUBLIC_KEY
           ),
         });
-      console.log("Successfully subscribed:", subscription);
+
+      const response = await subscribePushNotification(subscription);
+      console.log("Server response for subscribe:", response);
+      alert("Berhasil mengaktifkan notifikasi!");
     } catch (error) {
       console.error("Failed to subscribe:", error);
+      alert("Gagal mengaktifkan notifikasi. Silakan coba lagi.");
     }
   },
 
-  async _unsubscribe() {
-    const subscription = await navigator.serviceWorker.ready.then((sw) =>
-      sw.pushManager.getSubscription()
-    );
-    if (subscription) {
+  async _unsubscribe(subscription) {
+    try {
       const unsubscribed = await subscription.unsubscribe();
       if (unsubscribed) {
-        console.log("Successfully unsubscribed.");
+        const response = await unsubscribePushNotification(subscription);
+        console.log("Server response for unsubscribe:", response);
+        alert("Berhasil mematikan notifikasi!");
       }
+    } catch (error) {
+      console.error("Failed to unsubscribe:", error);
+      alert("Gagal mematikan notifikasi. Silakan coba lagi.");
     }
   },
 

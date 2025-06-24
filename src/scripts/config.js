@@ -7,7 +7,7 @@ const CONFIG = {
   OBJECT_STORE_NAME: "stories",
 
   VAPID_PUBLIC_KEY:
-    "BNxGUi4T7QiROO-4fLz3i2L8R2Zb523fDihs4S1rSgkeLgOw8D6q6nawgK_pBLV5nJ8x999q3gq07Zlsg9bV_ps",
+    "BCCs2eonMI-6H2ctvFaWg-UYdDv387Vno_bzUzALpB442r2lCnsHmtrx8biyPi_E-1fSGABK_Qs_GlvPoJJqxbk",
 };
 
 export default CONFIG;
